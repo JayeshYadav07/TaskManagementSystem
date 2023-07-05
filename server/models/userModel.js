@@ -18,6 +18,12 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    createdTask: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Task",
+        },
+    ],
 });
 
 const UserModel = mongoose.model("User", userSchema);

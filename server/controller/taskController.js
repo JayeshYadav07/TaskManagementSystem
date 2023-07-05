@@ -1,4 +1,5 @@
 const Task = require("../models/taskModel");
+const User = require("../models/userModel");
 const TaskController = {
     getAllTasks: async (req, res) => {
         try {
@@ -12,16 +13,20 @@ const TaskController = {
 
     createTask: async (req, res) => {
         try {
-            const { title, description, dueDate, assignedUser } = req.body;
+            const { title, description, dueDate, status, assignedUser } =
+                req.body;
 
             // Create a new task
             const task = await Task.create({
                 title,
                 description,
                 dueDate,
+                status,
                 assignedUser,
             });
-
+            const user = await User.findByIdAndUpdate(req.user._id, {
+                $push: { createdTask: task._id },
+            });
             res.status(201).json({ task });
         } catch (error) {
             console.error(error);
@@ -29,20 +34,16 @@ const TaskController = {
         }
     },
 
-    getTaskById: async (req, res) => {
+    getAllCreatedTaskById: async (req, res) => {
         try {
-            const { id } = req.params;
-
+            const id = req.user._id;
             // Find the task by ID
-            const task = await Task.findById(id).populate(
-                "assignedUser",
-                "name"
-            );
-            if (!task) {
+            const createdTask = await User.findById(id).populate("createdTask");
+            if (!createdTask) {
                 return res.status(404).json({ message: "Task not found" });
             }
 
-            res.json({ task });
+            res.json({ createdTask });
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Internal server error" });
@@ -52,7 +53,8 @@ const TaskController = {
     updateTask: async (req, res) => {
         try {
             const { id } = req.params;
-            const { title, description, dueDate, assignedUser } = req.body;
+            const { title, description, dueDate, status, assignedUser } =
+                req.body;
 
             // Find the task by ID and update it
             const task = await Task.findByIdAndUpdate(
@@ -61,10 +63,11 @@ const TaskController = {
                     title,
                     description,
                     dueDate,
+                    status,
                     assignedUser,
                 },
                 { new: true }
-            ).populate("assignedUser", "name");
+            ).populate("assignedUser");
             if (!task) {
                 return res.status(404).json({ message: "Task not found" });
             }
@@ -79,6 +82,10 @@ const TaskController = {
     deleteTask: async (req, res) => {
         try {
             const { id } = req.params;
+
+            const user = await User.findByIdAndUpdate(req.user._id, {
+                $pull: { createdTask: id },
+            });
 
             // Find the task by ID and delete it
             const task = await Task.findByIdAndDelete(id);

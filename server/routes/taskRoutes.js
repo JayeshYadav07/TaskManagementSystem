@@ -15,8 +15,12 @@ router.get(
 // Create a new task
 router.post("/", authMiddleware, TaskController.createTask);
 
-// Get a specific task
-router.get("/:id", authMiddleware, TaskController.getTaskById);
+// Get a all assigned task by user
+router.get(
+    "/createdTask",
+    authMiddleware,
+    TaskController.getAllCreatedTaskById
+);
 
 // Update a task
 router.put("/:id", authMiddleware, TaskController.updateTask);
